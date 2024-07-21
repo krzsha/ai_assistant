@@ -3,6 +3,8 @@ from PyPDF2 import PdfReader
 from pptx import Presentation
 from transformers import pipeline
 from docx import Document
+import torch
+from concurrent.futures import ThreadPoolExecutor
 
 # Functions to parse different document types
 def parse_pdf(file):
@@ -28,21 +30,30 @@ def parse_word(file):
         text += paragraph.text
     return text
 
+# Check if GPU is available
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 # Summarization pipeline
-summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn", device=0 if device == 'cuda' else -1)
+
+def summarize_text_chunk(chunk):
+    return summarizer(chunk, max_length=150, min_length=30, do_sample=False)[0]['summary_text']
 
 def summarize_text(text):
     # Split text into smaller chunks if it's too long
-    max_chunk_size = 1024
+    max_chunk_size = 512
     text_chunks = [text[i:i+max_chunk_size] for i in range(0, len(text), max_chunk_size)]
     
     summary = ''
-    for chunk in text_chunks:
-        summary += summarizer(chunk, max_length=150, min_length=30, do_sample=False)[0]['summary_text'] + ' '
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(summarize_text_chunk, chunk) for chunk in text_chunks]
+        for future in futures:
+            summary += future.result() + ' '
+    
     return summary.strip()
 
 # Question-Answering pipeline
-qa_pipeline = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
+qa_pipeline = pipeline("question-answering", model="distilbert-base-cased-distilled-squad", device=0 if device == 'cuda' else -1)
 
 def answer_question(context, question):
     answer = qa_pipeline(question=question, context=context)
