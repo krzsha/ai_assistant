@@ -1,0 +1,9 @@
+flask
+flask-cors
+PyMuPDF 
+python-docx 
+python-pptx  
+transformers 
+torch
+PyPDF2  
+streamlit  
