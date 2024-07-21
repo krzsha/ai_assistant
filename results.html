@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Assistant - Results</title>
+</head>
+<body>
+    <h1>Results</h1>
+    <h2>Summaries</h2>
+    <ul>
+        {% for summary in summaries %}
+        <li>{{ summary }}</li>
+        {% endfor %}
+    </ul>
+    <h2>Answer</h2>
+    <p>{{ answer }}</p>
+    <br><br>
+    <a href="/">Back to Home</a>
+</body>
+</html>
